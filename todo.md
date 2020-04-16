@@ -3,8 +3,6 @@ interface transaction {
   userId: string;
   voiceHash: string;
   timeStamp: number;
-  longitude?: number;
-  lantitude?: number;
 }
 
 interface chain {
@@ -17,15 +15,6 @@ interface chain {
 ```
 
 ```javascript
-//전체 블록 요청
-rest API => get => /blocks
-  // 풀노드 list 가져오기 : dynamodb
-
-//보이스 해시 업로드
-rest API => POST => /hash
-  // 서버의 마지막 노드에 결합되는지 확인(dynamodb)
-  // 풀노드에 블록 추가 : socket emit
-});
 
 socket => connect
   //data.lastBlock 체크 => 최신이라면 connect
@@ -34,25 +23,20 @@ socket => connect
   //error리턴받은 클라이언트는 /blocks rest요청
   //클라이언트는 블록 업데이트 후 다시 1번으로
 
+//전체 블록 요청
+socket => blocks
+  // 전체 블록 조회 : dynamodb
 
-//보이스 해시 검증 요청 : txId, userId, 보이스해시, 날짜
-app.get("/hash", (req: any, res: any) => {
-  // 풀노드 list 가져오기 : redis
-  // 풀노드에 검증 요청 : socket emit
-  // 검증 요청 노드
+//보이스 해시 업로드
+socket => newHash
+  // 서버의 마지막 노드에 결합되는지 확인(dynamodb)
+  // 다른 유저들에게 블록 추가 : socket emit
 });
 
-//풀노드 추가
-app.post("/node", (req: any, res: any) => {
-  // 마지막 블록 정보 확인 : body
-  // 최신 블록으로 update : socket emit
-  // 풀노드list에 추가 : redis
-  // 소켓 세션
-});
+//과거 블록 검증 요청 : index, {userId, voiceHash, timestamp}
+socket => checkHash
+  // 서버 => 다른 유저 // 검증 요청 : socket emit
+socket => authorizeHash
+  // 검증 결과(success/fail) 받아서 누적
 
-//해시 검증완료
-io.on("authorize/complete", (socket: any) => {
-  // success | fail 판단
-  // 임시 보관소에 전파
-});
 ```
