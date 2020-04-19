@@ -12,6 +12,9 @@ interface chain {
   timestamp: number;
   data: transaction;
 }
+
+const calculateHash = (index, previousHash, timestamp, data) =>
+    CryptoJS.SHA256(index + previousHash + timestamp + JSON.stringfy(data)).toString();
 ```
 
 ```javascript
@@ -33,10 +36,10 @@ socket => newHash
   // 다른 유저들에게 블록 추가 : socket emit
 });
 
-//과거 블록 검증 요청 : index, {userId, voiceHash, timestamp}
+//과거 블록 검증 요청 : index, {userId, voiceHash, timestamp}, checkTimestamp
 socket => checkHash
-  // 서버 => 다른 유저 // 검증 요청 : socket emit
+  // 서버 => 유저 : 검증 요청 : socket emit
 socket => authorizeHash
-  // 검증 결과(success/fail) 받아서 누적
+  // checkTimestamp, 검증 결과(success/fail) 받아서 누적
 
 ```

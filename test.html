@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>WebSocket test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
+    <script type="text/javascript">
+      let wSocket;
+      let logs;
+
+      const transaction = {
+        userId: 123,
+        voiceHash: "md5 hash by voice",
+        timeStamp: new Date().getTime(),
+      };
+
+      const blocks = [
+        {
+          index: 1,
+          hash: "thisblocksHash",
+          previousHash: "ItIsPreviousHash",
+          timestamp: new Date().getTime(),
+          data: transaction,
+        },
+      ];
+
+      window.onload = () => {
+        wSocket = new WebSocket(
+          "wss://5nhf5xw971.execute-api.ap-northeast-2.amazonaws.com/Prod"
+        );
+
+        logs = document.getElementById("result");
+
+        wSocket.onopen = onOpen;
+        wSocket.onclose = onClose;
+        wSocket.onmessage = onMessage;
+        wSocket.onerror = onError;
+      };
+
+      function onOpen(e) {
+        logs.textContent += "opened\n";
+      }
+
+      function onClose(e) {
+        logs.textContent += "WebSocket closed!\n";
+      }
+
+      function onMessage(e) {
+        console.log(e);
+        logs.textContent += "메시지 수신 : " + e.data + "\n";
+      }
+
+      function onError(e) {
+        logs.textContent += "오류발생 : " + e.data + "\n";
+      }
+
+      function doOpen() {
+        wSocket = new WebSocket(
+          "wss://5nhf5xw971.execute-api.ap-northeast-2.amazonaws.com/Prod"
+        );
+
+        wSocket.onopen = onOpen;
+        wSocket.onclose = onClose;
+        wSocket.onmessage = onMessage;
+        wSocket.onerror = onError;
+      }
+
+      function doClose() {
+        wSocket.close();
+      }
+
+      function doSend() {
+        transaction.voiceHash = document.getElementById("message").value;
+        wSocket.send(
+          JSON.stringify({
+            message: "sendmessage",
+            data: JSON.stringify(blocks),
+          })
+        );
+      }
+    </script>
+  </head>
+  <body>
+    <input type="button" onclick="doOpen();" value="Open" />
+    <input type="button" onclick="doClose();" value="Close" />
+    <input type="text" placeholder="Message" id="message" />
+    <input type="button" onclick="doSend();" value="Send" />
+    <h3 id="result">로그</h3>
+  </body>
+</html>
