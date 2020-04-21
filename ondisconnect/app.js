@@ -1,19 +1,16 @@
-// Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: MIT-0
-
 const AWS = require("aws-sdk");
 
 const ddb = new AWS.DynamoDB.DocumentClient({
   apiVersion: "2012-08-10",
-  region: process.env.AWS_REGION
+  region: process.env.AWS_REGION,
 });
 
-exports.handler = async event => {
+exports.handler = async (event) => {
   const deleteParams = {
-    TableName: process.env.TABLE_NAME,
+    TableName: process.env.TABLE_USERS,
     Key: {
-      connectionId: event.requestContext.connectionId
-    }
+      connectionId: event.requestContext.connectionId,
+    },
   };
 
   try {
@@ -21,7 +18,7 @@ exports.handler = async event => {
   } catch (err) {
     return {
       statusCode: 500,
-      body: "Failed to disconnect: " + JSON.stringify(err)
+      body: "Failed to disconnect: " + JSON.stringify(err),
     };
   }
 

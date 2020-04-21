@@ -1,32 +1,37 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  simple-websockets-chat-app
-
-  SAM Template for simple-websockets-chat-app that has the DynamoDB table and Lambda
-  functions needed to demonstrate the Websocket protocol on API Gateway.
+  VoiceChain_backend
 
 Parameters:
-  TableName:
+  TableUsers:
     Type: String
-    Default: "simplechat_connections"
-    Description: (Required) The name of the new DynamoDB to store connection identifiers for each connected clients. Minimum 3 characters
+    Default: "VC_users"
+    Description: store connection identifiers for each connected clients
+    MinLength: 3
+    MaxLength: 50
+    AllowedPattern: ^[A-Za-z_]+$
+    ConstraintDescription: "Required. Can be characters and underscore only. No numbers or special characters allowed."
+  TableChains:
+    Type: String
+    Default: "VC_chains"
+    Description: full node information
     MinLength: 3
     MaxLength: 50
     AllowedPattern: ^[A-Za-z_]+$
     ConstraintDescription: "Required. Can be characters and underscore only. No numbers or special characters allowed."
 
 Resources:
-  SimpleChatWebSocket:
+  VoiceChainSocket:
     Type: AWS::ApiGatewayV2::Api
     Properties:
-      Name: SimpleChatWebSocket
+      Name: VoiceChainSocket
       ProtocolType: WEBSOCKET
       RouteSelectionExpression: "$request.body.message"
   ConnectRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
-      ApiId: !Ref SimpleChatWebSocket
+      ApiId: !Ref VoiceChainSocket
       RouteKey: $connect
       AuthorizationType: NONE
       OperationName: ConnectRoute
@@ -37,7 +42,7 @@ Resources:
   ConnectInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
-      ApiId: !Ref SimpleChatWebSocket
+      ApiId: !Ref VoiceChainSocket
       Description: Connect Integration
       IntegrationType: AWS_PROXY
       IntegrationUri:
@@ -45,7 +50,7 @@ Resources:
   DisconnectRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
-      ApiId: !Ref SimpleChatWebSocket
+      ApiId: !Ref VoiceChainSocket
       RouteKey: $disconnect
       AuthorizationType: NONE
       OperationName: DisconnectRoute
@@ -56,7 +61,7 @@ Resources:
   DisconnectInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
-      ApiId: !Ref SimpleChatWebSocket
+      ApiId: !Ref VoiceChainSocket
       Description: Disconnect Integration
       IntegrationType: AWS_PROXY
       IntegrationUri:
@@ -64,7 +69,7 @@ Resources:
   SendRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
-      ApiId: !Ref SimpleChatWebSocket
+      ApiId: !Ref VoiceChainSocket
       RouteKey: sendmessage
       AuthorizationType: NONE
       OperationName: SendRoute
@@ -75,7 +80,7 @@ Resources:
   SendInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
-      ApiId: !Ref SimpleChatWebSocket
+      ApiId: !Ref VoiceChainSocket
       Description: Send Integration
       IntegrationType: AWS_PROXY
       IntegrationUri:
@@ -87,14 +92,14 @@ Resources:
       - SendRoute
       - DisconnectRoute
     Properties:
-      ApiId: !Ref SimpleChatWebSocket
+      ApiId: !Ref VoiceChainSocket
   Stage:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
       StageName: Prod
       Description: Prod Stage
       DeploymentId: !Ref Deployment
-      ApiId: !Ref SimpleChatWebSocket
+      ApiId: !Ref VoiceChainSocket
   ConnectionsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -109,7 +114,7 @@ Resources:
         WriteCapacityUnits: 5
       SSESpecification:
         SSEEnabled: True
-      TableName: !Ref TableName
+      TableName: !Ref TableUsers
   OnConnectFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -119,14 +124,14 @@ Resources:
       Runtime: nodejs12.x
       Environment:
         Variables:
-          TABLE_NAME: !Ref TableName
+          TABLE_USERS: !Ref TableUsers
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+            TableName: !Ref TableUsers
   OnConnectPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
-      - SimpleChatWebSocket
+      - VoiceChainSocket
       - OnConnectFunction
     Properties:
       Action: lambda:InvokeFunction
@@ -141,14 +146,14 @@ Resources:
       Runtime: nodejs12.x
       Environment:
         Variables:
-          TABLE_NAME: !Ref TableName
+          TABLE_USERS: !Ref TableUsers
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+            TableName: !Ref TableUsers
   OnDisconnectPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
-      - SimpleChatWebSocket
+      - VoiceChainSocket
       - OnDisconnectFunction
     Properties:
       Action: lambda:InvokeFunction
@@ -163,20 +168,20 @@ Resources:
       Runtime: nodejs12.x
       Environment:
         Variables:
-          TABLE_NAME: !Ref TableName
+          TABLE_USERS: !Ref TableUsers
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref TableName
+            TableName: !Ref TableUsers
         - Statement:
             - Effect: Allow
               Action:
                 - "execute-api:ManageConnections"
               Resource:
-                - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SimpleChatWebSocket}/*"
+                - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VoiceChainSocket}/*"
   SendMessagePermission:
     Type: AWS::Lambda::Permission
     DependsOn:
-      - SimpleChatWebSocket
+      - VoiceChainSocket
       - SendMessageFunction
     Properties:
       Action: lambda:InvokeFunction
@@ -207,7 +212,7 @@ Outputs:
         "",
         [
           "wss://",
-          !Ref SimpleChatWebSocket,
+          !Ref VoiceChainSocket,
           ".execute-api.",
           !Ref "AWS::Region",
           ".amazonaws.com/",

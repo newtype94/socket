@@ -26,7 +26,7 @@
 
       window.onload = () => {
         wSocket = new WebSocket(
-          "wss://5nhf5xw971.execute-api.ap-northeast-2.amazonaws.com/Prod"
+          "wss://9i9mqvw3d5.execute-api.ap-northeast-2.amazonaws.com/Prod"
         );
 
         logs = document.getElementById("result");
@@ -46,7 +46,6 @@
       }
 
       function onMessage(e) {
-        console.log(e);
         logs.textContent += "메시지 수신 : " + e.data + "\n";
       }
 
@@ -56,7 +55,7 @@
 
       function doOpen() {
         wSocket = new WebSocket(
-          "wss://5nhf5xw971.execute-api.ap-northeast-2.amazonaws.com/Prod"
+          "wss://9i9mqvw3d5.execute-api.ap-northeast-2.amazonaws.com/Prod"
         );
 
         wSocket.onopen = onOpen;
