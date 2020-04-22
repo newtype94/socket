@@ -9,9 +9,9 @@ AWS serverless architecture
 ```
 sam package --template-file template.yaml --output-template-file packaged.yaml --s3-bucket newtype94
 
-sam deploy --template-file packaged.yaml --stack-name simple-websocket-chat-app --capabilities CAPABILITY_IAM
+sam deploy --template-file packaged.yaml --stack-name voice-chain-backend --capabilities CAPABILITY_IAM
 
-aws cloudformation describe-stacks --stack-name simple-websocket-chat-app --query 'Stacks[].Outputs'
+aws cloudformation describe-stacks --stack-name voice_chain_backend --query 'Stacks[].Outputs'
 ```
 
 ## link

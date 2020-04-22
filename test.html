@@ -14,19 +14,26 @@
         timeStamp: new Date().getTime(),
       };
 
-      const blocks = [
+      let blocks = [
         {
           index: 1,
           hash: "thisblocksHash",
           previousHash: "ItIsPreviousHash",
           timestamp: new Date().getTime(),
-          data: transaction,
+          data: "",
+        },
+        {
+          index: 2,
+          hash: "thisblocksHash",
+          previousHash: "ItIsPreviousHash",
+          timestamp: new Date().getTime(),
+          data: "",
         },
       ];
 
       window.onload = () => {
         wSocket = new WebSocket(
-          "wss://9i9mqvw3d5.execute-api.ap-northeast-2.amazonaws.com/Prod"
+          "wss://aopdc2k8sk.execute-api.ap-northeast-2.amazonaws.com/Prod"
         );
 
         logs = document.getElementById("result");
@@ -55,7 +62,7 @@
 
       function doOpen() {
         wSocket = new WebSocket(
-          "wss://9i9mqvw3d5.execute-api.ap-northeast-2.amazonaws.com/Prod"
+          "wss://aopdc2k8sk.execute-api.ap-northeast-2.amazonaws.com/Prod"
         );
 
         wSocket.onopen = onOpen;
@@ -77,6 +84,15 @@
           })
         );
       }
+
+      function doCheck() {
+        wSocket.send(
+          JSON.stringify({
+            message: "checkhash",
+            data: "123123",
+          })
+        );
+      }
     </script>
   </head>
   <body>
@@ -84,6 +100,7 @@
     <input type="button" onclick="doClose();" value="Close" />
     <input type="text" placeholder="Message" id="message" />
     <input type="button" onclick="doSend();" value="Send" />
+    <input type="button" onclick="doCheck();" value="checkhash" />
     <h3 id="result">로그</h3>
   </body>
 </html>

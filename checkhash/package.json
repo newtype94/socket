@@ -1,0 +1,11 @@
+{
+  "name": "voice_chain_backend",
+  "version": "1.0.0",
+  "description": "voice_chain_project_backend",
+  "main": "src/app.js",
+  "author": "SAM CLI",
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "^2.434.0"
+  }
+}
