@@ -5,14 +5,19 @@ const ddb = new AWS.DynamoDB.DocumentClient({
   region: process.env.AWS_REGION,
 });
 
-const { TABLE_USERS } = process.env;
+const { TABLE_CHAINS } = process.env;
 
 exports.handler = async (event) => {
   let connectionData;
+  const clientLastBlock = JSON.parse(event.body).data;
 
   try {
     connectionData = await ddb
-      .scan({ TableName: TABLE_USERS, ProjectionExpression: "connectionId" })
+      .scan({
+        TableName: TABLE_CHAINS,
+        ProjectionExpression: "hash",
+        ScanIndexForward: false,
+      })
       .promise();
   } catch (e) {
     return { statusCode: 500, body: e.stack };
@@ -24,32 +29,22 @@ exports.handler = async (event) => {
       event.requestContext.domainName + "/" + event.requestContext.stage,
   });
 
-  const postData = JSON.parse(event.body).data;
-
-  const postCalls = connectionData.Items.map(async ({ connectionId }) => {
-    try {
-      await apigwManagementApi
-        .postToConnection({
-          ConnectionId: connectionId,
-          Data: "plz check hash",
-        })
-        .promise();
-    } catch (e) {
-      if (e.statusCode === 410) {
-        console.log(`Found stale connection, deleting ${connectionId}`);
-        await ddb
-          .delete({ TableName: TABLE_USERS, Key: { connectionId } })
-          .promise();
-      } else {
-        throw e;
-      }
-    }
-  });
-
   try {
-    await Promise.all(postCalls);
+    await apigwManagementApi
+      .postToConnection({
+        ConnectionId: event.requestContext.connectionId,
+        Data: event.requestContext.connectionId + ",,,,,," + clientLastBlock,
+      })
+      .promise();
   } catch (e) {
-    return { statusCode: 500, body: e.stack };
+    if (e.statusCode === 410) {
+      console.log(`Found stale connection, deleting ${connectionId}`);
+      await ddb
+        .delete({ TableName: TABLE_USERS, Key: { connectionId } })
+        .promise();
+    } else {
+      throw e;
+    }
   }
 
   return { statusCode: 200, body: "Data sent." };

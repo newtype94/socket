@@ -3,7 +3,6 @@
   <head>
     <meta charset="utf-8" />
     <title>WebSocket test</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
     <script type="text/javascript">
       let wSocket;
       let logs;
@@ -17,23 +16,31 @@
       let blocks = [
         {
           index: 1,
-          hash: "thisblocksHash",
-          previousHash: "ItIsPreviousHash",
-          timestamp: new Date().getTime(),
-          data: "",
+          hash: "firstBlockHash",
+          previousHash: "none",
+          timestamp: 1562000010000,
+          data: {
+            userId: "kyh",
+            voiceHash: "firstVoiceHash",
+            timeStamp: 1562000000000,
+          },
         },
         {
           index: 2,
-          hash: "thisblocksHash",
-          previousHash: "ItIsPreviousHash",
-          timestamp: new Date().getTime(),
-          data: "",
+          hash: "secondBlockHash",
+          previousHash: "firstBlockHash",
+          timestamp: 1587000010000,
+          data: {
+            userId: "kyh",
+            voiceHash: "secondVoiceHash",
+            timeStamp: 1587000000000,
+          },
         },
       ];
 
       window.onload = () => {
         wSocket = new WebSocket(
-          "wss://aopdc2k8sk.execute-api.ap-northeast-2.amazonaws.com/Prod"
+          "wss://0j0lgsbgo3.execute-api.ap-northeast-2.amazonaws.com/Prod"
         );
 
         logs = document.getElementById("result");
@@ -62,7 +69,7 @@
 
       function doOpen() {
         wSocket = new WebSocket(
-          "wss://aopdc2k8sk.execute-api.ap-northeast-2.amazonaws.com/Prod"
+          "wss://0j0lgsbgo3.execute-api.ap-northeast-2.amazonaws.com/Prod"
         );
 
         wSocket.onopen = onOpen;
@@ -76,20 +83,21 @@
       }
 
       function doSend() {
-        transaction.voiceHash = document.getElementById("message").value;
         wSocket.send(
           JSON.stringify({
             message: "sendmessage",
-            data: JSON.stringify(blocks),
+            data: JSON.stringify(document.getElementById("message").value),
           })
         );
       }
 
       function doCheck() {
+        const { index, hash } = blocks[blocks.length - 1];
+
         wSocket.send(
           JSON.stringify({
             message: "checkhash",
-            data: "123123",
+            data: { index, hash },
           })
         );
       }
