@@ -8,6 +8,8 @@ const ddb = new AWS.DynamoDB.DocumentClient({
 const { TABLE_USERS } = process.env;
 
 exports.handler = async (event) => {
+  const req = JSON.parse(event.body).data;
+
   let connectionData;
 
   try {
@@ -24,12 +26,13 @@ exports.handler = async (event) => {
       event.requestContext.domainName + "/" + event.requestContext.stage,
   });
 
-  const postData = JSON.parse(event.body).data;
-
   const postCalls = connectionData.Items.map(async ({ connectionId }) => {
     try {
       await apigwManagementApi
-        .postToConnection({ ConnectionId: connectionId, Data: postData })
+        .postToConnection({
+          ConnectionId: connectionId,
+          Data: req + "connectionId is:" + connectionId,
+        })
         .promise();
     } catch (e) {
       if (e.statusCode === 410) {

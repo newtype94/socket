@@ -18,7 +18,7 @@
           index: 1,
           hash: "firstBlockHash",
           previousHash: "none",
-          timestamp: 1562000010000,
+          createdAt: 1562000010000,
           data: {
             userId: "kyh",
             voiceHash: "firstVoiceHash",
@@ -29,7 +29,7 @@
           index: 2,
           hash: "secondBlockHash",
           previousHash: "firstBlockHash",
-          timestamp: 1587000010000,
+          createdAt: 1587000010000,
           data: {
             userId: "kyh",
             voiceHash: "secondVoiceHash",
@@ -40,7 +40,7 @@
 
       window.onload = () => {
         wSocket = new WebSocket(
-          "wss://0j0lgsbgo3.execute-api.ap-northeast-2.amazonaws.com/Prod"
+          "wss://l29wtnalgg.execute-api.ap-northeast-2.amazonaws.com/Prod"
         );
 
         logs = document.getElementById("result");
@@ -52,24 +52,25 @@
       };
 
       function onOpen(e) {
-        logs.textContent += "opened\n";
+        logs.textContent += `\n` + "opened";
       }
 
       function onClose(e) {
-        logs.textContent += "WebSocket closed!\n";
+        logs.textContent += `\n` + "WebSocket closed!";
       }
 
       function onMessage(e) {
-        logs.textContent += "메시지 수신 : " + e.data + "\n";
+        console.log("onMsg!");
+        logs.textContent += `\n` + "New MSG : " + e.data;
       }
 
       function onError(e) {
-        logs.textContent += "오류발생 : " + e.data + "\n";
+        logs.textContent += `\n` + "Error : " + e.data;
       }
 
       function doOpen() {
         wSocket = new WebSocket(
-          "wss://0j0lgsbgo3.execute-api.ap-northeast-2.amazonaws.com/Prod"
+          "wss://l29wtnalgg.execute-api.ap-northeast-2.amazonaws.com/Prod"
         );
 
         wSocket.onopen = onOpen;
@@ -83,21 +84,21 @@
       }
 
       function doSend() {
+        transaction.voiceHash = document.getElementById("message").value;
         wSocket.send(
           JSON.stringify({
-            message: "sendmessage",
-            data: JSON.stringify(document.getElementById("message").value),
+            message: "broadcast",
+            data: JSON.stringify(transaction),
           })
         );
       }
 
       function doCheck() {
         const { index, hash } = blocks[blocks.length - 1];
-
         wSocket.send(
           JSON.stringify({
-            message: "checkhash",
-            data: { index, hash },
+            message: "once",
+            data: JSON.stringify({ index, hash }),
           })
         );
       }

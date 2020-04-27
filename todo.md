@@ -32,7 +32,7 @@ socket => blocks
 
 //보이스 해시 업로드
 socket => newHash
-  // 서버의 마지막 노드에 결합되는지 확인(dynamodb)
+  // 마지막 블록에 결합될 새 블록 생성
   // 다른 유저들에게 블록 추가 : socket emit
 });
 

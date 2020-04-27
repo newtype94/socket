@@ -12,14 +12,6 @@ Parameters:
     MaxLength: 50
     AllowedPattern: ^[A-Za-z_]+$
     ConstraintDescription: "Required. Can be characters and underscore only. No numbers or special characters allowed."
-  TableChains:
-    Type: String
-    Default: "VC_chains"
-    Description: full node information
-    MinLength: 3
-    MaxLength: 50
-    AllowedPattern: ^[A-Za-z_]+$
-    ConstraintDescription: "Required. Can be characters and underscore only. No numbers or special characters allowed."
 
 Resources:
   VoiceChainSocket:
@@ -67,51 +59,52 @@ Resources:
       IntegrationType: AWS_PROXY
       IntegrationUri:
         Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnDisconnectFunction.Arn}/invocations
-  SendRoute:
+  BroadcastRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref VoiceChainSocket
-      RouteKey: sendmessage
+      RouteKey: broadcast
       AuthorizationType: NONE
-      OperationName: SendRoute
+      OperationName: BroadcastRoute
       Target: !Join
         - "/"
         - - "integrations"
-          - !Ref SendInteg
-  SendInteg:
+          - !Ref BroadcastInteg
+  BroadcastInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref VoiceChainSocket
-      Description: Send Integration
+      Description: Broadcast Integration
       IntegrationType: AWS_PROXY
       IntegrationUri:
-        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SendMessageFunction.Arn}/invocations
-  CheckHashRouote:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${BroadcastFunction.Arn}/invocations
+  OnceRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref VoiceChainSocket
-      RouteKey: checkhash
+      RouteKey: once
       AuthorizationType: NONE
-      OperationName: CheckHashRoute
+      OperationName: OnceRoute
       Target: !Join
         - "/"
         - - "integrations"
-          - !Ref CheckHashInteg
-  CheckHashInteg:
+          - !Ref OnceInteg
+  OnceInteg:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref VoiceChainSocket
-      Description: check hash Integration
+      Description: once Integration
       IntegrationType: AWS_PROXY
       IntegrationUri:
-        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CheckHashFunction.Arn}/invocations
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnceFunction.Arn}/invocations
 
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
       - ConnectRoute
-      - SendRoute
+      - BroadcastRoute
       - DisconnectRoute
+      - OnceRoute
     Properties:
       ApiId: !Ref VoiceChainSocket
   Stage:
@@ -137,25 +130,6 @@ Resources:
       SSESpecification:
         SSEEnabled: True
       TableName: !Ref TableUsers
-  ChainsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      AttributeDefinitions:
-        - AttributeName: "hash"
-          AttributeType: "S"
-        - AttributeName: "index"
-          AttributeType: "N"
-      KeySchema:
-        - AttributeName: "hash"
-          KeyType: "HASH"
-        - AttributeName: "index"
-          KeyType: "RANGE"
-      ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
-      SSESpecification:
-        SSEEnabled: True
-      TableName: !Ref TableChains
 
   OnConnectFunction:
     Type: AWS::Serverless::Function
@@ -201,10 +175,10 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref OnDisconnectFunction
       Principal: apigateway.amazonaws.com
-  SendMessageFunction:
+  BroadcastFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: sendmessage/
+      CodeUri: broadcast/
       Handler: app.handler
       MemorySize: 256
       Runtime: nodejs12.x
@@ -220,29 +194,27 @@ Resources:
                 - "execute-api:ManageConnections"
               Resource:
                 - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VoiceChainSocket}/*"
-  SendMessagePermission:
+  BroadcastPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
       - VoiceChainSocket
-      - SendMessageFunction
+      - BroadcastFunction
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref SendMessageFunction
+      FunctionName: !Ref BroadcastFunction
       Principal: apigateway.amazonaws.com
-  CheckHashFunction:
+  OnceFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: checkhash/
+      CodeUri: once/
       Handler: app.handler
       MemorySize: 256
       Runtime: nodejs12.x
       Environment:
         Variables:
           TABLE_USERS: !Ref TableUsers
-          TABLE_CHAINS: !Ref TableChains
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref TableChains
             TableName: !Ref TableUsers
         - Statement:
             - Effect: Allow
@@ -250,14 +222,14 @@ Resources:
                 - "execute-api:ManageConnections"
               Resource:
                 - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VoiceChainSocket}/*"
-  CheckHashPermission:
+  OncePermission:
     Type: AWS::Lambda::Permission
     DependsOn:
       - VoiceChainSocket
-      - CheckHashFunction
+      - OnceFunction
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref CheckHashFunction
+      FunctionName: !Ref OnceFunction
       Principal: apigateway.amazonaws.com
 
 Outputs:
@@ -273,13 +245,13 @@ Outputs:
     Description: "OnDisconnect function ARN"
     Value: !GetAtt OnDisconnectFunction.Arn
 
-  SendMessageFunctionArn:
-    Description: "SendMessage function ARN"
-    Value: !GetAtt SendMessageFunction.Arn
+  BroadcastFunctionArn:
+    Description: "Broadcast function ARN"
+    Value: !GetAtt BroadcastFunction.Arn
 
-  CheckHashFunctionArn:
-    Description: "CheckHash function ARN"
-    Value: !GetAtt CheckHashFunction.Arn
+  OnceFunctionArn:
+    Description: "Once function ARN"
+    Value: !GetAtt OnceFunction.Arn
 
   WebSocketURI:
     Description: "The WSS Protocol URI to connect to"
