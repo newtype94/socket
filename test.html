@@ -50,6 +50,18 @@
           },
         },
       ];
+      const newnew = {
+        index: 4,
+        hash:
+          "a9a811cfb7f0549ae95ff488a0ef49be7c15998d226824b6475a86f27db901fa",
+        previousHash: "secondBlockHash",
+        createdAt: 1588000010000,
+        data: {
+          userId: "kyh",
+          voiceHash: "thirdVoiceHash",
+          timeStamp: 1588000000000,
+        },
+      };
 
       window.onload = () => {
         wSocket = new WebSocket(
@@ -73,8 +85,8 @@
       }
 
       function onMessage(e) {
-        console.log("onMsg!");
-        logs.textContent += `\n` + "New MSG : " + e.data;
+        console.log(e);
+        logs.textContent += `\n` + "New MSG : " + JSON.stringify(e);
       }
 
       function onError(e) {
@@ -96,21 +108,22 @@
         wSocket.close();
       }
 
-      function doSend() {
-        transaction.voiceHash = document.getElementById("message").value;
+      function add() {
+        newnew.index = parseInt(document.getElementById("message").value);
+
         wSocket.send(
           JSON.stringify({
-            message: "broadcast",
-            data: JSON.stringify(transaction),
+            message: "add",
+            data: JSON.stringify(newnew),
           })
         );
       }
 
-      function doCheck() {
+      function check() {
         const { index, hash } = blocks[blocks.length - 1];
         wSocket.send(
           JSON.stringify({
-            message: "once",
+            message: "check",
             data: JSON.stringify({ index, hash }),
           })
         );
@@ -121,8 +134,8 @@
     <input type="button" onclick="doOpen();" value="Open" />
     <input type="button" onclick="doClose();" value="Close" />
     <input type="text" placeholder="Message" id="message" />
-    <input type="button" onclick="doSend();" value="Send" />
-    <input type="button" onclick="doCheck();" value="checkhash" />
+    <input type="button" onclick="add();" value="add" />
+    <input type="button" onclick="check();" value="check" />
     <h3 id="result">로그</h3>
   </body>
 </html>
