@@ -6,6 +6,7 @@
     <script type="text/javascript">
       let wSocket;
       let logs;
+      const userId = "kyh";
 
       const transaction = {
         userId: 123,
@@ -65,37 +66,42 @@
 
       window.onload = () => {
         wSocket = new WebSocket(
-          "wss://l29wtnalgg.execute-api.ap-northeast-2.amazonaws.com/Prod"
+          "wss://9qmjknn869.execute-api.ap-northeast-2.amazonaws.com/Prod"
         );
 
         logs = document.getElementById("result");
 
-        wSocket.onopen = onOpen;
-        wSocket.onclose = onClose;
+        wSocket.onopen = () => {
+          logs.textContent += "opened";
+        };
+        wSocket.onclose = () => {
+          logs.textContent += `\n` + "WebSocket closed!";
+        };
+        wSocket.onerror = (e) => {
+          logs.textContent += "Error : " + e.data;
+        };
         wSocket.onmessage = onMessage;
-        wSocket.onerror = onError;
       };
 
-      function onOpen(e) {
-        logs.textContent += `\n` + "opened";
-      }
-
-      function onClose(e) {
-        logs.textContent += `\n` + "WebSocket closed!";
-      }
-
       function onMessage(e) {
-        console.log(e);
-        logs.textContent += `\n` + "New MSG : " + JSON.stringify(e);
-      }
+        const got = JSON.parse(e.data);
 
-      function onError(e) {
-        logs.textContent += `\n` + "Error : " + e.data;
+        switch (got.message) {
+          case "checkPlz":
+            console.log(got);
+            checkResponse(got.data.requester);
+            break;
+          case "checkResult":
+            console.log(got);
+            break;
+          default:
+            break;
+        }
       }
 
       function doOpen() {
         wSocket = new WebSocket(
-          "wss://l29wtnalgg.execute-api.ap-northeast-2.amazonaws.com/Prod"
+          "wss://9qmjknn869.execute-api.ap-northeast-2.amazonaws.com/Prod"
         );
 
         wSocket.onopen = onOpen;
@@ -109,22 +115,30 @@
       }
 
       function add() {
-        newnew.index = parseInt(document.getElementById("message").value);
-
+        //newnew.index = parseInt(document.getElementById("message").value);
         wSocket.send(
           JSON.stringify({
             message: "add",
-            data: JSON.stringify(newnew),
+            data: newnew,
           })
         );
       }
 
-      function check() {
-        const { index, hash } = blocks[blocks.length - 1];
+      function checkRequest() {
+        const { index, data } = blocks[blocks.length - 1];
         wSocket.send(
           JSON.stringify({
             message: "check",
-            data: JSON.stringify({ index, hash }),
+            data: { index, data },
+          })
+        );
+      }
+
+      function checkResponse(requester) {
+        wSocket.send(
+          JSON.stringify({
+            message: "check",
+            data: { requester, checker: userId, result: true },
           })
         );
       }
@@ -135,7 +149,7 @@
     <input type="button" onclick="doClose();" value="Close" />
     <input type="text" placeholder="Message" id="message" />
     <input type="button" onclick="add();" value="add" />
-    <input type="button" onclick="check();" value="check" />
+    <input type="button" onclick="checkRequest();" value="check" />
     <h3 id="result">로그</h3>
   </body>
 </html>

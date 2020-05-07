@@ -16,7 +16,7 @@ aws cloudformation describe-stacks --stack-name voice_chain_backend --query 'Sta
 
 ## link
 
-https://5nhf5xw971.execute-api.ap-northeast-2.amazonaws.com/Prod/@connections
+https://9qmjknn869.execute-api.ap-northeast-2.amazonaws.com/Prod/@connections
 
 ## Testing the chat API
 
