@@ -89,12 +89,23 @@
         switch (got.message) {
           case "checkPlz":
             console.log(got);
+            //체크한 결과 보내주기
             checkResponse(got.data.requester);
             break;
           case "checkResult":
             console.log(got);
+            //체크 결과 화면에 표시
+            break;
+          case "addFailed":
+            console.log(got);
+            //보이스 계산 다시 하여 업로드
+            break;
+          case "addPlz":
+            console.log(got);
+            //로컬 디비(체인)에 블록 추가
             break;
           default:
+            console.log(got);
             break;
         }
       }
@@ -115,7 +126,7 @@
       }
 
       function add() {
-        //newnew.index = parseInt(document.getElementById("message").value);
+        newnew.index = parseInt(document.getElementById("message").value);
         wSocket.send(
           JSON.stringify({
             message: "add",

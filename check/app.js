@@ -30,7 +30,7 @@ exports.handler = async (event) => {
     }
 
     body.requester = requester;
-    //연결된 유저에게 검증 요청 broadcast
+    //연결된 유저들에게 검증 요청 broadcast
     const postCalls = connectionData.Items.map(async ({ connectionId }) => {
       try {
         await apigwManagementApi
@@ -64,10 +64,6 @@ exports.handler = async (event) => {
         })
         .promise();
     } catch (e) {
-      if (e.statusCode === 410)
-        await ddb
-          .delete({ TableName: TABLE_USERS, Key: { connectionId: requester } })
-          .promise();
       return errs(e);
     }
   }

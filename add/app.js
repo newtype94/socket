@@ -22,77 +22,59 @@ exports.handler = async (event) => {
 
   const req = JSON.parse(event.body).data;
   const sender = event.requestContext.connectionId;
+  let postResult = true;
 
   //req 검증
   try {
     await axios.post(url, req);
-    await apigwManagementApi
-      .postToConnection({
-        ConnectionId: sender,
-        Data: "addFailed",
-        //Data: JSON.stringify({ message: "addFailed", data: "" }),
-      })
-      .promise();
-
-    return { statusCode: 200, body: "" };
   } catch (e) {
-    return errs(e);
+    postResult = false;
   }
 
-  //CREATE 실패 시 failed return
-  try {
-    await apigwManagementApi
-      .postToConnection({
-        ConnectionId: sender,
-        Data: "addFailed",
-        //Data: JSON.stringify({ message: "addFailed", data: "" }),
-      })
-      .promise();
-  } catch (e) {
-    if (e.statusCode === 410)
-      await ddb
-        .delete({ TableName: TABLE_USERS, Key: { connectionId: sender } })
-        .promise();
-
-    return errs(e);
-  }
-
-  /*
-  //소켓 연결 유저 리스트
-  let connectionData;
-  try {
-    connectionData = await ddb
-      .scan({ TableName: TABLE_USERS, ProjectionExpression: "connectionId" })
-      .promise();
-  } catch (e) {
-    return errs(e);
-  }
-
-  //CREATE 성공 시 전체 노드에 broadcast
-  const postCalls = connectionData.Items.map(async ({ connectionId }) => {
+  if (!postResult) {
     try {
       await apigwManagementApi
         .postToConnection({
-          ConnectionId: connectionId,
-          Data: JSON.stringify({ message: "addPlz", data: req }),
+          ConnectionId: sender,
+          Data: JSON.stringify({ message: "addFailed", data: "" }),
         })
         .promise();
     } catch (e) {
-      if (e.statusCode === 410)
-        await ddb
-          .delete({ TableName: TABLE_USERS, Key: { connectionId } })
-          .promise();
-
       return errs(e);
     }
-  });
+  } else {
+    let connectionData;
+    try {
+      connectionData = await ddb
+        .scan({ TableName: TABLE_USERS, ProjectionExpression: "connectionId" })
+        .promise();
+    } catch (e) {
+      return errs(e);
+    }
 
-  try {
-    await Promise.all(postCalls);
-  } catch (e) {
-    return errs(e);
+    const postCalls = connectionData.Items.map(async ({ connectionId }) => {
+      try {
+        await apigwManagementApi
+          .postToConnection({
+            ConnectionId: connectionId,
+            Data: JSON.stringify({ message: "addPlz", data: req }),
+          })
+          .promise();
+      } catch (e) {
+        if (e.statusCode === 410)
+          await ddb
+            .delete({ TableName: TABLE_USERS, Key: { connectionId } })
+            .promise();
+        return errs(e);
+      }
+    });
+
+    try {
+      await Promise.all(postCalls);
+    } catch (e) {
+      return errs(e);
+    }
   }
-  */
 
   return { statusCode: 200, body: "Data sent." };
 };
