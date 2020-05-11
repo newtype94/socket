@@ -7,9 +7,6 @@
     <script type="text/javascript">
       let wSocket;
       let logs;
-      axios
-        .get("https://api.androidhive.info/contacts/", { crossdomain: true })
-        .then((a) => console.log(a));
       const userId = "kyh";
 
       const transaction = {
@@ -68,39 +65,25 @@
         },
       };
 
-      window.onload = () => {
-        logs = document.getElementById("result");
-        doOpen();
-      };
-
-      function onMessage(e) {
+      const onMessage = (e) => {
         const got = JSON.parse(e.data);
-
+        console.log(got);
         switch (got.message) {
           case "checkPlz":
-            console.log(got);
             //체크한 결과 보내주기
             checkResponse(got.data.requester);
-            break;
           case "checkResult":
-            console.log(got);
-            //체크 결과 화면에 표시
-            break;
+          //체크 결과 화면에 표시
           case "addFailed":
-            console.log(got);
-            //보이스 계산 다시 하여 업로드
-            break;
+          //보이스 계산 다시 하여 업로드
           case "addPlz":
-            console.log(got);
-            //로컬 디비(체인)에 블록 추가
-            break;
+          //로컬 디비(체인)에 블록 추가
           default:
-            console.log(got);
             break;
         }
-      }
+      };
 
-      function doOpen() {
+      const doOpen = () => {
         wSocket = new WebSocket(
           "wss://9qmjknn869.execute-api.ap-northeast-2.amazonaws.com/Prod"
         );
@@ -114,9 +97,9 @@
           logs.textContent += "Error : " + e.data;
         };
         wSocket.onmessage = onMessage;
-      }
+      };
 
-      function add() {
+      const add = () => {
         newnew.index = parseInt(document.getElementById("message").value);
         wSocket.send(
           JSON.stringify({
@@ -124,9 +107,9 @@
             data: newnew,
           })
         );
-      }
+      };
 
-      function checkRequest() {
+      const checkRequest = () => {
         const { index, data } = blocks[blocks.length - 1];
         wSocket.send(
           JSON.stringify({
@@ -134,16 +117,16 @@
             data: { index, data },
           })
         );
-      }
+      };
 
-      function checkResponse(requester) {
+      const checkResponse = (requester) => {
         wSocket.send(
           JSON.stringify({
             message: "check",
             data: { requester, checker: userId, result: true },
           })
         );
-      }
+      };
 
       const myBlockCheck = async () => {
         const myLastBlock = blocks[blocks.length - 1];
@@ -166,11 +149,13 @@
           "&timeStamp=" +
           myLastBlock.data.timeStamp;
 
-        console.log(query);
+        const got = await axios.get(query, { crossdomain: true });
+        logs.textContent += JSON.stringify(got.data);
+      };
 
-        logs.textContent += JSON.stringify(
-          await axios.get(query, { crossdomain: true })
-        );
+      window.onload = () => {
+        logs = document.getElementById("result");
+        doOpen();
       };
     </script>
   </head>
