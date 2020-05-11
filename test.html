@@ -3,9 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <title>WebSocket test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"></script>
     <script type="text/javascript">
       let wSocket;
       let logs;
+      axios
+        .get("https://api.androidhive.info/contacts/", { crossdomain: true })
+        .then((a) => console.log(a));
       const userId = "kyh";
 
       const transaction = {
@@ -65,22 +69,8 @@
       };
 
       window.onload = () => {
-        wSocket = new WebSocket(
-          "wss://9qmjknn869.execute-api.ap-northeast-2.amazonaws.com/Prod"
-        );
-
         logs = document.getElementById("result");
-
-        wSocket.onopen = () => {
-          logs.textContent += "opened";
-        };
-        wSocket.onclose = () => {
-          logs.textContent += `\n` + "WebSocket closed!";
-        };
-        wSocket.onerror = (e) => {
-          logs.textContent += "Error : " + e.data;
-        };
-        wSocket.onmessage = onMessage;
+        doOpen();
       };
 
       function onMessage(e) {
@@ -114,15 +104,16 @@
         wSocket = new WebSocket(
           "wss://9qmjknn869.execute-api.ap-northeast-2.amazonaws.com/Prod"
         );
-
-        wSocket.onopen = onOpen;
-        wSocket.onclose = onClose;
+        wSocket.onopen = () => {
+          logs.textContent += "opened";
+        };
+        wSocket.onclose = () => {
+          logs.textContent += `\n` + "WebSocket closed!";
+        };
+        wSocket.onerror = (e) => {
+          logs.textContent += "Error : " + e.data;
+        };
         wSocket.onmessage = onMessage;
-        wSocket.onerror = onError;
-      }
-
-      function doClose() {
-        wSocket.close();
       }
 
       function add() {
@@ -153,14 +144,43 @@
           })
         );
       }
+
+      const myBlockCheck = async () => {
+        const myLastBlock = blocks[blocks.length - 1];
+
+        let query =
+          "https://cophwimxel.execute-api.ap-northeast-2.amazonaws.com/prod/check" +
+          "?" +
+          "index=" +
+          myLastBlock.index +
+          "&hash=" +
+          myLastBlock.hash +
+          "&previousHash=" +
+          myLastBlock.previousHash +
+          "&createdAt=" +
+          myLastBlock.createdAt +
+          "&userId=" +
+          myLastBlock.data.userId +
+          "&voiceHash=" +
+          myLastBlock.data.voiceHash +
+          "&timeStamp=" +
+          myLastBlock.data.timeStamp;
+
+        console.log(query);
+
+        logs.textContent += JSON.stringify(
+          await axios.get(query, { crossdomain: true })
+        );
+      };
     </script>
   </head>
   <body>
     <input type="button" onclick="doOpen();" value="Open" />
-    <input type="button" onclick="doClose();" value="Close" />
-    <input type="text" placeholder="Message" id="message" />
-    <input type="button" onclick="add();" value="add" />
-    <input type="button" onclick="checkRequest();" value="check" />
+    <input type="button" onclick="wSocket.close()" value="Close" /><br />
+    <input type="text" placeholder="Message" id="새 블록 index(임시)" />
+    <input type="button" onclick="add();" value="새 블록 생성" />
+    <input type="button" onclick="checkRequest();" value="검증 요청 보내기" />
+    <input type="button" onclick="myBlockCheck();" value="마지막 블록 체크" />
     <h3 id="result">로그</h3>
   </body>
 </html>
