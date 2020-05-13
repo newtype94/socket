@@ -4,16 +4,27 @@
     <meta charset="utf-8" />
     <title>WebSocket test</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
     <script type="text/javascript">
       let wSocket;
       let logs;
       const userId = "kyh";
-
-      const transaction = {
-        userId: 123,
-        voiceHash: "md5 hash by voice",
-        timeStamp: new Date().getTime(),
-      };
+      const calculateHash = ({
+        index,
+        previousHash,
+        createdAt,
+        tx_userId,
+        tx_voiceHash,
+        tx_timeStamp,
+      }) =>
+        CryptoJS.SHA256(
+          index +
+            previousHash +
+            createdAt +
+            tx_userId +
+            tx_voiceHash +
+            tx_timeStamp
+        ).toString();
 
       let blocks = [
         {
@@ -21,11 +32,9 @@
           hash: "firstBlockHash",
           previousHash: "none",
           createdAt: 1562000010000,
-          data: {
-            userId: "kyh",
-            voiceHash: "firstVoiceHash",
-            timeStamp: 1562000000000,
-          },
+          tx_userId: "kyh",
+          tx_voiceHash: "firstVoiceHash",
+          tx_timeStamp: 1562000000000,
         },
         {
           index: 2,
@@ -33,11 +42,9 @@
             "d058abab5582e7ec62dd7e29768931d7970679460468b29a1d9380d4ea870950",
           previousHash: "firstBlockHash",
           createdAt: 1587000010000,
-          data: {
-            userId: "kyh",
-            voiceHash: "secondVoiceHash",
-            timeStamp: 1587000000000,
-          },
+          tx_userId: "kyh",
+          tx_voiceHash: "secondVoiceHash",
+          tx_timeStamp: 1587000000000,
         },
         {
           index: 3,
@@ -45,39 +52,27 @@
             "a9a811cfb7f0549ae95ff488a0ef49be7c15998d226824b6475a86f27db901fa",
           previousHash: "secondBlockHash",
           createdAt: 1588000010000,
-          data: {
-            userId: "kyh",
-            voiceHash: "thirdVoiceHash",
-            timeStamp: 1588000000000,
-          },
+          tx_userId: "kyh",
+          tx_voiceHash: "thirdVoiceHash",
+          tx_timeStamp: 1588000000000,
         },
       ];
-      const newnew = {
-        index: 4,
-        hash:
-          "a9a811cfb7f0549ae95ff488a0ef49be7c15998d226824b6475a86f27db901fa",
-        previousHash: "secondBlockHash",
-        createdAt: 1588000010000,
-        data: {
-          userId: "kyh",
-          voiceHash: "thirdVoiceHash",
-          timeStamp: 1588000000000,
-        },
-      };
 
       const onMessage = (e) => {
         const got = JSON.parse(e.data);
-        console.log(got);
+        console.log("[" + got.message + "]" + got.data);
         switch (got.message) {
           case "checkPlz":
-            //체크한 결과 보내주기
-            checkResponse(got.data.requester);
-          case "checkResult":
-          //체크 결과 화면에 표시
-          case "addFailed":
-          //보이스 계산 다시 하여 업로드
+            checkPlzHandler(got.data);
+            break;
           case "addPlz":
-          //로컬 디비(체인)에 블록 추가
+            //RN에서는 sql로 insert
+            blocks.push(got.data);
+            break;
+          case "checkResult":
+            break;
+          case "addFailed":
+            break;
           default:
             break;
         }
@@ -99,31 +94,53 @@
         wSocket.onmessage = onMessage;
       };
 
-      const add = () => {
-        newnew.index = parseInt(document.getElementById("message").value);
+      const addRequest = () => {
+        const newBlock = {
+          index: blocks[blocks.length - 1].index + 1,
+          hash: "to be calculated",
+          previousHash: blocks[blocks.length - 1].index + 1,
+          createdAt: new Date().getTime(), //1588000000000,
+          tx_userId: userId,
+          tx_voiceHash: document.getElementById("MSG").value,
+          tx_timeStamp: new Date().getTime(), //1588000000000,
+        };
+        newBlock.hash = calculateHash(newBlock);
+        console.log(newBlock);
         wSocket.send(
           JSON.stringify({
             message: "add",
-            data: newnew,
+            data: newBlock,
           })
         );
       };
 
       const checkRequest = () => {
-        const { index, data } = blocks[blocks.length - 1];
+        const selected = blocks[blocks.length - 1];
+        const { index, tx_voiceHash, tx_userId, tx_timeStamp } = selected;
         wSocket.send(
           JSON.stringify({
             message: "check",
-            data: { index, data },
+            data: { index, tx_voiceHash, tx_userId, tx_voiceHash },
           })
         );
       };
 
-      const checkResponse = (requester) => {
+      const checkPlzHandler = ({
+        requester,
+        index,
+        tx_timeStamp,
+        tx_userId,
+        tx_voiceHash,
+      }) => {
+        const selected = blocks[index];
+        const result =
+          selected.tx_timeStamp === tx_timeStamp &&
+          selected.tx_userId === tx_userId &&
+          selected.tx_voiceHash === tx_voiceHash;
         wSocket.send(
           JSON.stringify({
             message: "check",
-            data: { requester, checker: userId, result: true },
+            data: { requester, result, checker: userId },
           })
         );
       };
@@ -132,8 +149,7 @@
         const myLastBlock = blocks[blocks.length - 1];
 
         let query =
-          "https://cophwimxel.execute-api.ap-northeast-2.amazonaws.com/prod/check" +
-          "?" +
+          "https://cophwimxel.execute-api.ap-northeast-2.amazonaws.com/prod/check?" +
           "index=" +
           myLastBlock.index +
           "&hash=" +
@@ -142,12 +158,12 @@
           myLastBlock.previousHash +
           "&createdAt=" +
           myLastBlock.createdAt +
-          "&userId=" +
-          myLastBlock.data.userId +
-          "&voiceHash=" +
-          myLastBlock.data.voiceHash +
-          "&timeStamp=" +
-          myLastBlock.data.timeStamp;
+          "&tx_userId=" +
+          myLastBlock.tx_userId +
+          "&tx_voiceHash=" +
+          myLastBlock.tx_voiceHash +
+          "&tx_timeStamp=" +
+          myLastBlock.tx_timeStamp;
 
         const got = await axios.get(query, { crossdomain: true });
         logs.textContent += JSON.stringify(got.data);
@@ -162,8 +178,8 @@
   <body>
     <input type="button" onclick="doOpen();" value="Open" />
     <input type="button" onclick="wSocket.close()" value="Close" /><br />
-    <input type="text" placeholder="Message" id="새 블록 index(임시)" />
-    <input type="button" onclick="add();" value="새 블록 생성" />
+    <input type="text" placeholder="voice hash for new block" id="MSG" />
+    <input type="button" onclick="addRequest();" value="새 블록 생성" />
     <input type="button" onclick="checkRequest();" value="검증 요청 보내기" />
     <input type="button" onclick="myBlockCheck();" value="마지막 블록 체크" />
     <h3 id="result">로그</h3>
