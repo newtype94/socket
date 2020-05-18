@@ -17,7 +17,7 @@ Resources:
   VoiceChainSocket:
     Type: AWS::ApiGatewayV2::Api
     Properties:
-      Name: VoiceChainSocket
+      Name: voice-chain-socket
       ProtocolType: WEBSOCKET
       RouteSelectionExpression: "$request.body.message"
 

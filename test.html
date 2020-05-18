@@ -2,7 +2,13 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>WebSocket test</title>
+    <title>voice chain front web</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+      integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk"
+      crossorigin="anonymous"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
     <script type="text/javascript">
@@ -60,49 +66,81 @@
 
       const onMessage = (e) => {
         const got = JSON.parse(e.data);
-        console.log("[" + got.message + "]" + got.data);
         switch (got.message) {
           case "checkPlz":
+            logs.innerText +=
+              "\n[다른 유저로부터 voice hash 검증 요청]" +
+              JSON.stringify(got.data);
             checkPlzHandler(got.data);
             break;
           case "addPlz":
-            //RN에서는 sql로 insert
-            blocks.push(got.data);
+            logs.innerText +=
+              "\n[네트워크로부터 새로운 블록이 도착]" +
+              JSON.stringify(got.data);
+            addPlzHandler(got.data);
             break;
           case "checkResult":
+            logs.innerText +=
+              "\n[나의 voice hash 검증 요청에 대한 결과 도착]" +
+              JSON.stringify(got.data);
             break;
           case "addFailed":
+            logs.innerText += "\n[블록 전송 실패]";
             break;
           default:
             break;
         }
       };
 
-      const doOpen = () => {
+      const doOpen = async () => {
+        const a = await lastBlockCheck();
+
+        if (!a.isCorrect) {
+          logs.innerText += "\n블록에 오류가 있어 전면 교체합니다.";
+          const forUpdate = await axios.get(
+            "https://jylagc9o0j.execute-api.ap-northeast-2.amazonaws.com/prod/block",
+            { crossdomain: true }
+          );
+          blocks = forUpdate.data.Items;
+          return;
+        } else if (!a.isLast) {
+          logs.innerText += "\n블록이 최신 버전이 아닙니다.";
+          const forUpdate = await axios.get(
+            "https://jylagc9o0j.execute-api.ap-northeast-2.amazonaws.com/prod/block?start=" +
+              (blocks.length + 1),
+            { crossdomain: true }
+          );
+          console.log(forUpdate);
+          blocks.push(...forUpdate.data.Items);
+          logs.innerText += "\n블록이 업데이트 되었습니다";
+          return;
+        }
+
         wSocket = new WebSocket(
-          "wss://9qmjknn869.execute-api.ap-northeast-2.amazonaws.com/Prod"
+          "wss://0jh2jgfcub.execute-api.ap-northeast-2.amazonaws.com/Prod"
         );
         wSocket.onopen = () => {
-          logs.textContent += "opened";
+          logs.innerText += "\nsocket opened!";
         };
         wSocket.onclose = () => {
-          logs.textContent += `\n` + "WebSocket closed!";
+          logs.innerText += "\nsocket closed!";
         };
         wSocket.onerror = (e) => {
-          logs.textContent += "Error : " + e.data;
+          logs.innerText += "\nError : " + e.data;
         };
         wSocket.onmessage = onMessage;
       };
 
       const addRequest = () => {
         const newBlock = {
-          index: blocks[blocks.length - 1].index + 1,
+          index: blocks.length + 1,
           hash: "to be calculated",
-          previousHash: blocks[blocks.length - 1].index + 1,
-          createdAt: new Date().getTime(), //1588000000000,
+          previousHash: blocks[blocks.length - 1].hash,
+          createdAt: new Date().getTime(),
           tx_userId: userId,
-          tx_voiceHash: document.getElementById("MSG").value,
-          tx_timeStamp: new Date().getTime(), //1588000000000,
+          tx_voiceHash:
+            document.getElementById("MSG").value || "it_is_voice_hash",
+          tx_timeStamp: new Date().getTime(),
         };
         newBlock.hash = calculateHash(newBlock);
         console.log(newBlock);
@@ -116,11 +154,11 @@
 
       const checkRequest = () => {
         const selected = blocks[blocks.length - 1];
-        const { index, tx_voiceHash, tx_userId, tx_timeStamp } = selected;
+        const { index, tx_voiceHash, tx_timeStamp } = selected;
         wSocket.send(
           JSON.stringify({
             message: "check",
-            data: { index, tx_voiceHash, tx_userId, tx_voiceHash },
+            data: { index, tx_voiceHash, tx_userId: userId, tx_timeStamp },
           })
         );
       };
@@ -132,7 +170,7 @@
         tx_userId,
         tx_voiceHash,
       }) => {
-        const selected = blocks[index];
+        const selected = blocks[index - 1];
         const result =
           selected.tx_timeStamp === tx_timeStamp &&
           selected.tx_userId === tx_userId &&
@@ -145,43 +183,95 @@
         );
       };
 
-      const myBlockCheck = async () => {
-        const myLastBlock = blocks[blocks.length - 1];
+      const addPlzHandler = (forAdd) => {
+        //RN : sql insert
+        //----
+        //WEB : array push
+        blocks.push(forAdd);
+      };
 
+      const lastBlockCheck = async () => {
+        const lastBlock = blocks[blocks.length - 1];
         let query =
-          "https://cophwimxel.execute-api.ap-northeast-2.amazonaws.com/prod/check?" +
+          "https://jylagc9o0j.execute-api.ap-northeast-2.amazonaws.com/prod/check?" +
           "index=" +
-          myLastBlock.index +
+          lastBlock.index +
           "&hash=" +
-          myLastBlock.hash +
+          lastBlock.hash +
           "&previousHash=" +
-          myLastBlock.previousHash +
+          lastBlock.previousHash +
           "&createdAt=" +
-          myLastBlock.createdAt +
+          lastBlock.createdAt +
           "&tx_userId=" +
-          myLastBlock.tx_userId +
+          lastBlock.tx_userId +
           "&tx_voiceHash=" +
-          myLastBlock.tx_voiceHash +
+          lastBlock.tx_voiceHash +
           "&tx_timeStamp=" +
-          myLastBlock.tx_timeStamp;
+          lastBlock.tx_timeStamp;
 
         const got = await axios.get(query, { crossdomain: true });
-        logs.textContent += JSON.stringify(got.data);
+        console.log(query);
+
+        return got.data;
       };
 
       window.onload = () => {
         logs = document.getElementById("result");
-        doOpen();
       };
     </script>
   </head>
   <body>
-    <input type="button" onclick="doOpen();" value="Open" />
-    <input type="button" onclick="wSocket.close()" value="Close" /><br />
-    <input type="text" placeholder="voice hash for new block" id="MSG" />
-    <input type="button" onclick="addRequest();" value="새 블록 생성" />
-    <input type="button" onclick="checkRequest();" value="검증 요청 보내기" />
-    <input type="button" onclick="myBlockCheck();" value="마지막 블록 체크" />
-    <h3 id="result">로그</h3>
+    <div class="container">
+      <div class="row my-2">
+        <h1>VoiceChain test front page</h1>
+      </div>
+      <div class="row my-2">
+        <div class="xs-12">
+          <input
+            type="button"
+            class="btn btn-primary"
+            onclick="doOpen();"
+            value="Open"
+          />
+          <input
+            type="button"
+            class="btn btn-danger"
+            onclick="wSocket.close()"
+            value="Close"
+          />
+        </div>
+      </div>
+      <div class="row my-2">
+        <div class="xs-6">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="voice hash for new block"
+            id="MSG"
+          />
+        </div>
+        <div class="xs-6">
+          <input
+            type="button"
+            class="btn btn-info"
+            onclick="addRequest();"
+            value="새 블록 생성"
+          />
+        </div>
+      </div>
+      <div class="row my-2">
+        <div class="xs-12">
+          <input
+            type="button"
+            class="btn btn-warning"
+            onclick="checkRequest();"
+            value="내 블록(특정 index) 검증 요청"
+          />
+        </div>
+      </div>
+      <div class="row my-2">
+        <div class="xs-12"><h3 id="result">Logs</h3></div>
+      </div>
+    </div>
   </body>
 </html>

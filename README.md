@@ -7,11 +7,11 @@ AWS serverless architecture
 - install the [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
 
 ```
-sam package --template-file template.yaml --output-template-file packaged.yaml --s3-bucket newtype94
+sam package --template-file template.yaml --output-template-file packaged.yaml --s3-bucket voice-chain-socket
 
-sam deploy --template-file packaged.yaml --stack-name voice-chain-backend --capabilities CAPABILITY_IAM
+sam deploy --template-file packaged.yaml --stack-name voice-chain-socket --capabilities CAPABILITY_IAM
 
-aws cloudformation describe-stacks --stack-name voice_chain_backend --query 'Stacks[].Outputs'
+aws cloudformation describe-stacks --stack-name voice-chain-socket --query 'Stacks[].Outputs'
 ```
 
 ## link
@@ -20,14 +20,11 @@ https://9qmjknn869.execute-api.ap-northeast-2.amazonaws.com/Prod/@connections
 
 ## Testing the chat API
 
-1. [Install NPM](https://www.npmjs.com/get-npm).
-2. Install wscat:
-
 ```bash
 $ npm install -g wscat
 ```
 
-3. On the console, connect to your published API endpoint by executing the following command:
+1. connect
 
 ```bash
 $ wscat -c wss://5nhf5xw971.execute-api.ap-northeast-2.amazonaws.com/Prod

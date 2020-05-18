@@ -9,7 +9,7 @@ const ddb = new AWS.DynamoDB.DocumentClient({
 const { TABLE_USERS } = process.env;
 
 const url =
-  "https://cophwimxel.execute-api.ap-northeast-2.amazonaws.com/prod/block";
+  "https://jylagc9o0j.execute-api.ap-northeast-2.amazonaws.com/prod/block";
 
 const errs = (e) => ({ statusCode: e.statusCode || 500, body: e.stack });
 
