@@ -112,7 +112,7 @@
           );
           console.log(forUpdate);
           blocks.push(...forUpdate.data.Items);
-          logs.innerText += "\n블록이 업데이트 되었습니다";
+          logs.innerText += "\n블록이 업데이트 되었습니다. 다시 연결해주세요";
           return;
         }
 
@@ -153,12 +153,19 @@
       };
 
       const checkRequest = () => {
-        const selected = blocks[blocks.length - 1];
-        const { index, tx_voiceHash, tx_timeStamp } = selected;
+        const filename = "2___kyh___1587000000000";
+        const [index, tx_userId, tx_timeStamp] = filename.split("___");
+        const gotHashFromFile = "secondVoiceHash";
+
         wSocket.send(
           JSON.stringify({
             message: "check",
-            data: { index, tx_voiceHash, tx_userId: userId, tx_timeStamp },
+            data: {
+              index: parseInt(index),
+              tx_voiceHash: gotHashFromFile,
+              tx_userId,
+              tx_timeStamp: parseInt(tx_timeStamp),
+            },
           })
         );
       };
@@ -270,7 +277,7 @@
         </div>
       </div>
       <div class="row my-2">
-        <div class="xs-12"><h3 id="result">Logs</h3></div>
+        <div class="xs-12"><h5 id="result">Logs</h3></div>
       </div>
     </div>
   </body>
