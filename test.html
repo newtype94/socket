@@ -14,7 +14,7 @@
     <script type="text/javascript">
       let wSocket;
       let logs;
-      const userId = "kyh";
+      let userId = "kyh";
       const calculateHash = ({
         index,
         previousHash,
@@ -93,6 +93,8 @@
       };
 
       const doOpen = async () => {
+        userId = document.getElementById("userId").value || "kyh";
+        blocks = blocks.sort((a, b) => a.index - b.index);
         const a = await lastBlockCheck();
 
         if (!a.isCorrect) {
@@ -211,7 +213,6 @@
 
         const got = await axios.get(query, { crossdomain: true });
         console.log(query);
-
         return got.data;
       };
 
@@ -226,7 +227,15 @@
         <h1>VoiceChain test front page</h1>
       </div>
       <div class="row my-2">
-        <div class="xs-12">
+        <div class="xs-6">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="userId for connection"
+            id="userId"
+          />
+        </div>
+        <div class="xs-6">
           <input
             type="button"
             class="btn btn-primary"
