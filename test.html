@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>voice chain front web</title>
+    <title>voice chain simulator</title>
     <link
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
@@ -153,16 +153,19 @@
       };
 
       const checkRequest = () => {
-        const filename = "2___kyh___1587000000000";
-        const [index, tx_userId, tx_timeStamp] = filename.split("___");
-        const gotHashFromFile = "secondVoiceHash";
+        let filename = "kyh___1587000000000.mp3";
+        filename = filename.slice(0, filename.length-4);
+        const [tx_userId, tx_timeStamp] = filename.split("___");
+        const hashGotFromFile = "secondVoiceHash";
+        const {index} = blocks.filter(v => 
+          v['tx_userId']===tx_userId && v['tx_timeStamp']===parseInt(tx_timeStamp))[0]
 
         wSocket.send(
           JSON.stringify({
             message: "check",
             data: {
-              index: parseInt(index),
-              tx_voiceHash: gotHashFromFile,
+              index,
+              tx_voiceHash: hashGotFromFile,
               tx_userId,
               tx_timeStamp: parseInt(tx_timeStamp),
             },
@@ -217,7 +220,7 @@
   <body>
     <div class="container">
       <div class="row my-2">
-        <h1>VoiceChain test front page</h1>
+        <h1>VoiceChain Simulator</h1>
       </div>
       <div class="row my-2">
         <div class="xs-6">
