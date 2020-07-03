@@ -69,23 +69,23 @@
         switch (got.message) {
           case "checkPlz":
             logs.innerText +=
-              "\n[다른 유저로부터 voice hash 검증 요청]" +
+              "\n\n[다른 유저로부터 voice hash 검증 요청]" +
               JSON.stringify(got.data);
             checkPlzHandler(got.data);
             break;
           case "addPlz":
             logs.innerText +=
-              "\n[네트워크로부터 새로운 블록이 도착]" +
+              "\n\n[네트워크로부터 새로운 블록이 도착]" +
               JSON.stringify(got.data);
             addPlzHandler(got.data);
             break;
           case "checkResult":
             logs.innerText +=
-              "\n[나의 voice hash 검증 요청에 대한 결과 도착]" +
+              "\n\n[나의 voice hash 검증 요청에 대한 결과 도착]" +
               JSON.stringify(got.data);
             break;
           case "addFailed":
-            logs.innerText += "\n[블록 전송 실패]";
+            logs.innerText += "\n\n[블록 전송 실패]";
             break;
           default:
             break;
@@ -270,7 +270,7 @@
             type="button"
             class="btn btn-warning"
             onclick="checkRequest();"
-            value="내 블록(특정 index) 검증 요청"
+            value="voice hash 검증 요청(index = 2)"
           />
         </div>
       </div>
